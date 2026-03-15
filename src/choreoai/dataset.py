@@ -1,174 +1,149 @@
+"""
+dataset.py — Dataset schema definitions and manifest utilities.
+
+Provides dataclass schemas for ChoreoAI samples and helpers to
+scan data directories and emit JSON manifest files consumed by
+:mod:`choreoai.torch_dataset`.
+"""
+
 from __future__ import annotations
 
-from dataclasses import dataclass
+import json
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-import shutil
-from typing import Iterable, Iterator
-
-import numpy as np
+from typing import Any
 
 
-@dataclass(frozen=True)
-class SequenceExample:
-    seq_id: str
-    poses_path: Path
-    text_path: Path | None
-    image_path: Path | None
-    audio_path: Path | None
+# ---------------------------------------------------------------------------
+# Data schemas
+# ---------------------------------------------------------------------------
 
 
-@dataclass(frozen=True)
-class SequenceSummary:
-    seq_id: str
-    frames: int
-    joints: int
-    dims: int
-    dtype: str
-    has_text: bool
-    has_image: bool
-    has_audio: bool
+@dataclass
+class ModalityPaths:
+    """Relative file paths for optional paired modalities."""
+
+    text: str | None = None    # path to tokens.pt
+    image: str | None = None   # path to image.pt
+    audio: str | None = None   # path to audio.pt
 
 
-class DatasetIndex:
-    def __init__(self, root: Path) -> None:
-        self.root = root
+@dataclass
+class SampleEntry:
+    """Manifest entry describing a single ChoreoAI training sample.
 
-    def sequences(self) -> Iterator[SequenceExample]:
-        if not self.root.exists():
-            raise FileNotFoundError(f"dataset root not found: {self.root}")
-        if not self.root.is_dir():
-            raise NotADirectoryError(f"dataset root is not a directory: {self.root}")
+    Attributes:
+        path: Relative directory containing ``poses.npy``.
+        text: Relative path to pre-tokenised text tensor (optional).
+        image: Relative path to image tensor (optional).
+        audio: Relative path to audio tensor (optional).
+        metadata: Free-form dictionary for any extra annotations
+                  (e.g. dancer id, piece name, duration in seconds).
+    """
 
-        for seq_dir in sorted(p for p in self.root.iterdir() if p.is_dir()):
-            poses = seq_dir / "poses.npy"
-            text = seq_dir / "text_prompt.txt"
-            image = seq_dir / "image_reference.png"
-            audio = seq_dir / "audio.wav"
+    path: str
+    text: str | None = None
+    image: str | None = None
+    audio: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-            yield SequenceExample(
-                seq_id=seq_dir.name,
-                poses_path=poses,
-                text_path=text if text.exists() else None,
-                image_path=image if image.exists() else None,
-                audio_path=audio if audio.exists() else None,
-            )
-
-
-def load_pose_array(path: Path, allow_nonfinite: bool = False) -> np.ndarray:
-    arr = np.load(path)
-    if arr.ndim != 3:
-        raise ValueError(f"invalid rank {arr.ndim}, expected 3")
-    if arr.shape[-1] != 3:
-        raise ValueError(f"invalid trailing dimension {arr.shape[-1]}, expected 3")
-    if arr.shape[0] <= 0 or arr.shape[1] <= 0:
-        raise ValueError(f"invalid empty shape {arr.shape}")
-    if not np.issubdtype(arr.dtype, np.number):
-        raise ValueError(f"invalid dtype {arr.dtype}, expected numeric")
-    if not allow_nonfinite and not np.isfinite(arr).all():
-        raise ValueError("pose array contains non-finite values")
-    return arr
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to plain dict, omitting ``None`` modality fields."""
+        d = asdict(self)
+        for key in ("text", "image", "audio"):
+            if d[key] is None:
+                del d[key]
+        return d
 
 
-def validate_sequence(example: SequenceExample) -> list[str]:
-    errors: list[str] = []
-    if not example.poses_path.exists():
-        errors.append(f"{example.seq_id}: missing poses.npy")
-        return errors
-
-    try:
-        arr = load_pose_array(example.poses_path)
-    except Exception as exc:  # noqa: BLE001 - capture numpy errors
-        errors.append(f"{example.seq_id}: poses.npy unreadable ({exc})")
-        return errors
-
-    if arr.ndim != 3 or arr.shape[-1] != 3:
-        errors.append(f"{example.seq_id}: poses.npy has invalid shape {arr.shape}, expected (T,K,3)")
-
-    return errors
+# ---------------------------------------------------------------------------
+# Manifest I/O
+# ---------------------------------------------------------------------------
 
 
-def validate_dataset(root: Path) -> list[str]:
-    index = DatasetIndex(root)
-    errors: list[str] = []
-    for example in index.sequences():
-        errors.extend(validate_sequence(example))
-    return errors
+def save_manifest(entries: list[SampleEntry], manifest_path: str | Path) -> None:
+    """Serialise a list of :class:`SampleEntry` to a JSON manifest.
+
+    Args:
+        entries: Dataset entries to serialise.
+        manifest_path: Destination JSON file path.
+    """
+    path = Path(manifest_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = [e.to_dict() for e in entries]
+    with path.open("w") as fh:
+        json.dump(payload, fh, indent=2)
 
 
-def iter_pose_sequences(root: Path) -> Iterable[np.ndarray]:
-    for example in DatasetIndex(root).sequences():
-        if example.poses_path.exists():
-            yield load_pose_array(example.poses_path)
+def load_manifest(manifest_path: str | Path) -> list[SampleEntry]:
+    """Load a manifest JSON file into a list of :class:`SampleEntry`.
+
+    Args:
+        manifest_path: Path to the JSON manifest.
+
+    Returns:
+        List of dataset entries.
+    """
+    path = Path(manifest_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Manifest not found: {path}")
+    with path.open() as fh:
+        raw: list[dict[str, Any]] = json.load(fh)
+    return [SampleEntry(**entry) for entry in raw]
 
 
-def summarize_dataset(root: Path) -> list[SequenceSummary]:
-    summaries: list[SequenceSummary] = []
-    for example in DatasetIndex(root).sequences():
-        if not example.poses_path.exists():
+def scan_data_directory(
+    root: str | Path,
+    *,
+    require_text: bool = False,
+    require_image: bool = False,
+    require_audio: bool = False,
+) -> list[SampleEntry]:
+    """Walk *root* and auto-discover samples by the presence of ``poses.npy``.
+
+    For each discovered sample directory the function checks for optional
+    companion files ``tokens.pt``, ``image.pt``, and ``audio.pt``.
+
+    Args:
+        root: Top-level data directory.
+        require_text: Skip samples without a text modality file.
+        require_image: Skip samples without an image modality file.
+        require_audio: Skip samples without an audio modality file.
+
+    Returns:
+        List of discovered :class:`SampleEntry` objects with paths relative
+        to *root*.
+    """
+    root = Path(root)
+    entries: list[SampleEntry] = []
+
+    for pose_file in sorted(root.rglob("poses.npy")):
+        sample_dir = pose_file.parent
+        rel = sample_dir.relative_to(root)
+
+        text_file = sample_dir / "tokens.pt"
+        image_file = sample_dir / "image.pt"
+        audio_file = sample_dir / "audio.pt"
+
+        text_rel = str(rel / "tokens.pt") if text_file.exists() else None
+        image_rel = str(rel / "image.pt") if image_file.exists() else None
+        audio_rel = str(rel / "audio.pt") if audio_file.exists() else None
+
+        # Apply optional filters
+        if require_text and text_rel is None:
             continue
-        try:
-            arr = load_pose_array(example.poses_path)
-        except Exception:  # noqa: BLE001
+        if require_image and image_rel is None:
             continue
-        summaries.append(
-            SequenceSummary(
-                seq_id=example.seq_id,
-                frames=int(arr.shape[0]),
-                joints=int(arr.shape[1]),
-                dims=int(arr.shape[2]),
-                dtype=str(arr.dtype),
-                has_text=example.text_path is not None,
-                has_image=example.image_path is not None,
-                has_audio=example.audio_path is not None,
+        if require_audio and audio_rel is None:
+            continue
+
+        entries.append(
+            SampleEntry(
+                path=str(rel),
+                text=text_rel,
+                image=image_rel,
+                audio=audio_rel,
             )
         )
-    return summaries
 
-
-def stage_pose_sequence(
-    source_path: Path,
-    dataset_root: Path,
-    seq_id: str,
-    text: str | None = None,
-    force: bool = False,
-) -> Path:
-    arr = load_pose_array(source_path)
-    seq_dir = dataset_root / seq_id
-    poses_path = seq_dir / "poses.npy"
-
-    if seq_dir.exists() and not force:
-        raise FileExistsError(f"sequence already exists: {seq_dir}")
-    elif seq_dir.exists():
-        shutil.rmtree(seq_dir)
-
-    seq_dir.mkdir(parents=True, exist_ok=True)
-    np.save(poses_path, arr)
-
-    if text is not None:
-        (seq_dir / "text_prompt.txt").write_text(text.strip() + "\n", encoding="utf-8")
-
-    return seq_dir
-
-
-def bootstrap_dataset_from_raw(
-    raw_root: Path,
-    dataset_root: Path,
-    force: bool = False,
-) -> list[Path]:
-    if not raw_root.exists():
-        raise FileNotFoundError(f"raw root not found: {raw_root}")
-    if not raw_root.is_dir():
-        raise NotADirectoryError(f"raw root is not a directory: {raw_root}")
-
-    created: list[Path] = []
-    for source in sorted(raw_root.glob("*.npy")):
-        seq_id = source.stem
-        seq_dir = dataset_root / seq_id
-        if seq_dir.exists() and not force:
-            raise FileExistsError(f"sequence already exists: {seq_dir}")
-        elif seq_dir.exists():
-            shutil.rmtree(seq_dir)
-        seq_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, seq_dir / "poses.npy")
-        created.append(seq_dir)
-    return created
+    return entries

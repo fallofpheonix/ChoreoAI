@@ -59,7 +59,7 @@ pip install -e .
 - `docs/`: Comprehensive project documentation and GSoC proposal logic.
 - `configs/`: Model hyperparameters and training configurations.
 - `notebooks/`: Exploratory analysis and artist-led visualization demos.
-- `tests/`: Unit and integration tests (planned — not yet implemented).
+- `tests/`: Unit and integration tests.
 
 ## 🤝 Contributing
 

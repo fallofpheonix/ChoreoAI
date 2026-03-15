@@ -1,0 +1,40 @@
+# configs/train_contrastive.yaml
+# Hydra configuration for contrastive alignment training
+
+defaults:
+  - _self_
+
+data:
+  manifest: data/manifest.json
+  max_seq_len: 120
+
+model:
+  num_joints: 17
+  d_model: 256
+  nhead: 8
+  num_layers: 4
+  latent_dim: 256
+  temperature: 0.07
+  learn_temperature: true
+  use_text: true
+  use_image: false
+  use_audio: false
+  freeze_text: true
+  freeze_image: true
+  text_model: roberta-base
+  image_model: vit_base_patch16_224
+  n_mels: 80
+
+training:
+  epochs: 100
+  batch_size: 64
+  lr: 1.0e-4
+  weight_decay: 1.0e-2
+  num_workers: 4
+  save_every: 10
+  checkpoint_dir: checkpoints/contrastive
+
+wandb:
+  enabled: false
+  project: choreoai
+  run_name: contrastive

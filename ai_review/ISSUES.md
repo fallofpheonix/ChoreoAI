@@ -3,27 +3,32 @@
 ## Current Status
 Documentation: ✅ Complete
 Repository Structure: ✅ Cleaned (duplicate `doc/` removed; `docs/` is canonical)
-Core Model Code: ❌ Missing entirely
-Scaffold: ✅ Build metadata + dataset bootstrap/summary/validation CLI added
-Preprocessing: ✅ Interpolation, smoothing, and normalization pipeline added
+Core Model Code: ✅ Implemented (encoders, generator, training pipelines)
+Scaffold: ✅ Build metadata + dataset CLI (validate, summarize, stage, bootstrap, preprocess)
+Preprocessing: ✅ PyTorch and NumPy preprocessing pipelines
+Tests: ✅ Unit tests for all major modules
+Pose Extraction: ✅ MediaPipe-based pose extractor
+Visualization: ✅ Skeleton animation utility
+Evaluation: ✅ FMD metric computation
 
 ---
 
-## Missing
-- Pose extraction script (MediaPipe or OpenPose) not implemented
-- Encoders (text/image/audio/motion) not implemented
-- Generator (diffusion or transformer) not implemented
-- Training/eval pipeline not started
-- Visualization script (skeleton animation) not created
-- Model-ready dataset wrapper not implemented
+## Resolved (after merge with main)
+- ✅ Pose extraction script (MediaPipe) implemented
+- ✅ Encoders (text/image/audio/motion) implemented
+- ✅ Generator (denoising transformer + diffusion scheduler) implemented
+- ✅ Training/eval pipeline implemented
+- ✅ Visualization script created
+- ✅ Model-ready dataset wrapper implemented (torch_dataset.py)
+- ✅ Unit tests added for all modules
 
-## Mistakes / Problems
-- Docs reference encoders and generator but no implementations exist
-- Model choices (e.g., RoBERTa, ResNet/ViT) are not pinned in dependencies
+## Remaining Work
+- Model checkpoints and pre-trained weights not included
+- Documentation for training workflows could be expanded
+- Integration tests for full pipeline not yet added
 
 ## Next Actions
-1. Implement `pose_extractor.py` using MediaPipe or OpenPose
-2. Add a model-ready dataset wrapper over `data/processed`
-3. Create skeleton animation visualization utility
-4. Implement text and image encoders
-5. Choose and download a larger dataset sample (e.g., AIST++)
+1. Train initial models and save checkpoints
+2. Expand CLI documentation for training commands
+3. Add integration tests for end-to-end workflows
+4. Download and prepare a larger dataset (e.g., AIST++)
