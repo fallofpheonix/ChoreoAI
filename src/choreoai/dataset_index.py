@@ -134,15 +134,26 @@ def iter_pose_sequences(root: Path) -> Iterable[np.ndarray]:
 
 
 def summarize_dataset(root: Path) -> list[SequenceSummary]:
-    """Generate summary statistics for all sequences in a dataset."""
+    """Generate summary statistics for all sequences in a dataset.
+
+    Raises:
+        RuntimeError: If any sequence is missing or has an unreadable poses.npy.
+            Run ``validate-dataset`` first to identify all issues.
+    """
     summaries: list[SequenceSummary] = []
     for example in DatasetIndex(root).sequences():
         if not example.poses_path.exists():
-            continue
+            raise RuntimeError(
+                f"sequence {example.seq_id!r} is missing poses.npy – "
+                "run validate-dataset to identify all issues before summarizing."
+            )
         try:
             arr = load_pose_array(example.poses_path)
-        except Exception:  # noqa: BLE001
-            continue
+        except Exception as exc:
+            raise RuntimeError(
+                f"sequence {example.seq_id!r} has unreadable poses.npy ({exc}) – "
+                "run validate-dataset to identify all issues before summarizing."
+            ) from exc
         summaries.append(
             SequenceSummary(
                 seq_id=example.seq_id,

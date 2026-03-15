@@ -329,13 +329,17 @@ def main() -> int:
         "preprocess": _cmd_preprocess_dataset,
     }
 
-    if args.command in dispatch_void:
-        dispatch_void[args.command](args)
-        return 0
-    elif args.command in dispatch_int:
-        return dispatch_int[args.command](args)
-    else:
-        parser.print_help()
+    try:
+        if args.command in dispatch_void:
+            dispatch_void[args.command](args)
+            return 0
+        elif args.command in dispatch_int:
+            return dispatch_int[args.command](args)
+        else:
+            parser.print_help()
+            return 1
+    except (FileNotFoundError, ValueError, RuntimeError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
         return 1
 
 
