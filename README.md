@@ -9,7 +9,7 @@
 
 ## 📖 Project Overview
 
-**ChoreoAI** is an experimental open-source framework designed to expand the digital perception of dance. While traditional AI choreography focuses on music-to-motion prediction, ChoreoAI treats dance as a **multimodal dialogue**. By aligning 3D motion with text, imagery, architecture, and spoken word, we empower artists to explore AI as a generative partner in the choreographic process.
+**ChoreoAI** is an experimental open-source framework designed to expand the digital perception of dance. While traditional AI choreography focuses on motion-to-motion prediction, ChoreoAI treats dance as a **multimodal dialogue**. By aligning 3D motion with text, imagery, architecture, and spoken word, we empower artists to explore AI as a generative partner in the choreographic process.
 
 Developed as part of the **HumanAI** initiative, this project prioritizes artist-led design and expressive expansiveness over reductive movement prediction.
 
@@ -56,6 +56,7 @@ pip install -e .
 
 - `src/choreoai/`: Core library (Extraction, Alignment, Generation).
 - `data/`: Sample datasets and modality pairs.
+- `docs/`: Comprehensive project documentation and GSoC proposal logic.
 - `configs/`: Model hyperparameters and training configurations.
 - `notebooks/`: Exploratory analysis and artist-led visualization demos.
 - `tests/`: Comprehensive unit and integration tests.
@@ -77,4 +78,36 @@ Please **DO NOT** contact mentors directly by email. Instead, please email [huma
 - **Ilya Vidrin** (Northeastern University)
 
 ---
-*Developed for HumanAI — Imagine expansiveness, not conformity.*
+
+### Project Legacy & Technical Details (from ChoreoAI)
+
+#### Expected Results
+1. Create a dataset of dynamic point-cloud data corresponding to extracted motion capture poses from videos of dances.
+2. Craft a (semi-)supervised paradigm for constructing paired modalities (language, audio, art, etc.).
+3. Design a multimodal embedding scheme.
+4. Train an any-to-any generative model.
+5. Work closely with dance artists for artist-led design.
+
+#### CLI Workflow
+Bootstrap a dataset from raw pose arrays:
+```bash
+PYTHONPATH=src python3 -m choreoai.cli bootstrap-dataset --raw-root data/raw --root data/dataset
+```
+
+Validate dataset structure and pose tensor shape:
+```bash
+PYTHONPATH=src python3 -m choreoai.cli validate-dataset --root data/dataset
+```
+
+Summarize sequence-level dataset statistics:
+```bash
+PYTHONPATH=src python3 -m choreoai.cli summarize-dataset --root data/dataset
+```
+
+Preprocess dataset sequences for downstream modeling:
+```bash
+PYTHONPATH=src python3 -m choreoai.cli preprocess-dataset --root data/dataset --output-root data/processed
+```
+
+*Developed for HumanAI — Imagine expansiveness, not conformity.*ns `(T,K,3)` and is stored as `float32`.
+>>>>>>> secondary/main
