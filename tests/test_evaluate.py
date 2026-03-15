@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 import torch
 import torch.nn.functional as F
+from torch import Tensor
 
 from choreoai.evaluate import (
     compute_fmd,

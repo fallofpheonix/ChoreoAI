@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import torch
 from torch import Tensor
 
 # Lazy matplotlib import to avoid requiring display in headless environments

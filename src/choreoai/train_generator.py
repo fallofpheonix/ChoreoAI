@@ -26,6 +26,7 @@ import torch.optim as optim
 from omegaconf import DictConfig, OmegaConf
 
 from choreoai.encoders.motion_encoder import MotionEncoder
+from choreoai.encoders.text_encoder import TextEncoder
 from choreoai.generator.denoising_transformer import DenoisingTransformer
 from choreoai.generator.diffusion_scheduler import DDPMScheduler
 from choreoai.torch_dataset import build_dataloader

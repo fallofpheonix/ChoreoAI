@@ -13,6 +13,7 @@ from choreoai.torch_dataset import ChoreoDataset, collate_fn, build_dataloader
 
 # re-use shared constants
 from tests.conftest import NUM_JOINTS, SEQ_LEN
+from tests.conftest import NUM_JOINTS, SEQ_LEN, BATCH_SIZE
 
 
 # ---------------------------------------------------------------------------

@@ -12,6 +12,10 @@ Entry points:
   choreoai stage        — copy a raw poses.npy into dataset layout
   choreoai bootstrap    — stage every .npy file from a raw directory
   choreoai preprocess   — repair, smooth, and normalize pose sequences
+  choreoai generate  — generate motion from a text prompt
+  choreoai extract   — extract poses from a video file
+  choreoai evaluate  — compute evaluation metrics
+  choreoai scan      — scan a data directory and build a manifest
 """
 
 from __future__ import annotations
@@ -27,6 +31,7 @@ logger = logging.getLogger("choreoai")
 
 # ---------------------------------------------------------------------------
 # Generation / Inference Commands (from main)
+# Sub-commands
 # ---------------------------------------------------------------------------
 
 
@@ -51,6 +56,7 @@ def _cmd_generate(args: argparse.Namespace) -> None:
 
     if args.output_mp4:
         animate_skeleton(motion, fps=args.fps, output_path=args.output_mp4)
+        anim = animate_skeleton(motion, fps=args.fps, output_path=args.output_mp4)
         logger.info("Animation saved → %s", args.output_mp4)
 
     if args.output_json:
@@ -90,6 +96,7 @@ def _cmd_evaluate(args: argparse.Namespace) -> None:
     import numpy as np
     import torch
 
+    import torch
     from choreoai.encoders.motion_encoder import MotionEncoder
     from choreoai.evaluate import compute_fmd, extract_motion_features
 
@@ -100,6 +107,12 @@ def _cmd_evaluate(args: argparse.Namespace) -> None:
     def _load(path: str) -> torch.Tensor:
         arr = np.load(path)
         return torch.from_numpy(arr)
+    import numpy as np
+
+    def _load(path: str):  # type: ignore[return]
+        arr = np.load(path)
+        import torch as _torch
+        return _torch.from_numpy(arr)
 
     real_poses = [_load(p) for p in Path(args.real_dir).glob("**/*.npy")]
     gen_poses = [_load(p) for p in Path(args.gen_dir).glob("**/*.npy")]
@@ -305,6 +318,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    return parser
+
+
+def main() -> None:
     """ChoreoAI CLI entry point."""
     parser = _build_parser()
     args = parser.parse_args()
@@ -315,6 +332,7 @@ def main() -> int:
     )
 
     dispatch_void = {
+    dispatch = {
         "generate": _cmd_generate,
         "extract": _cmd_extract,
         "evaluate": _cmd_evaluate,
@@ -345,3 +363,13 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+    handler = dispatch.get(args.command)
+    if handler is None:
+        parser.print_help()
+        sys.exit(1)
+
+    handler(args)
+
+
+if __name__ == "__main__":
+    main()

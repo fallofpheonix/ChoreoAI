@@ -7,6 +7,7 @@ skeleton tensors before feeding them into the training pipeline.
 
 from __future__ import annotations
 
+import numpy as np
 import torch
 from torch import Tensor
 
@@ -121,6 +122,7 @@ def temporal_jitter(poses: Tensor, max_shift: int = 5) -> Tensor:
     Returns:
         Jittered ``(T, K, 3)`` tensor.
     """
+    T = poses.shape[0]
     shift = int(torch.randint(0, max_shift + 1, (1,)).item())
     if shift == 0:
         return poses
