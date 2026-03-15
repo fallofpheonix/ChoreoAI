@@ -104,7 +104,12 @@ def iter_pose_sequences(root: Path) -> Iterable[np.ndarray]:
 def summarize_dataset(root: Path) -> list[SequenceSummary]:
     summaries: list[SequenceSummary] = []
     for example in DatasetIndex(root).sequences():
-        arr = load_pose_array(example.poses_path)
+        if not example.poses_path.exists():
+            continue
+        try:
+            arr = load_pose_array(example.poses_path)
+        except Exception:  # noqa: BLE001
+            continue
         summaries.append(
             SequenceSummary(
                 seq_id=example.seq_id,
@@ -133,6 +138,8 @@ def stage_pose_sequence(
 
     if seq_dir.exists() and not force:
         raise FileExistsError(f"sequence already exists: {seq_dir}")
+    elif seq_dir.exists():
+        shutil.rmtree(seq_dir)
 
     seq_dir.mkdir(parents=True, exist_ok=True)
     np.save(poses_path, arr)
@@ -159,6 +166,8 @@ def bootstrap_dataset_from_raw(
         seq_dir = dataset_root / seq_id
         if seq_dir.exists() and not force:
             raise FileExistsError(f"sequence already exists: {seq_dir}")
+        elif seq_dir.exists():
+            shutil.rmtree(seq_dir)
         seq_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, seq_dir / "poses.npy")
         created.append(seq_dir)

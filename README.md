@@ -59,7 +59,7 @@ pip install -e .
 - `docs/`: Comprehensive project documentation and GSoC proposal logic.
 - `configs/`: Model hyperparameters and training configurations.
 - `notebooks/`: Exploratory analysis and artist-led visualization demos.
-- `tests/`: Comprehensive unit and integration tests.
+- `tests/`: Unit and integration tests (planned — not yet implemented).
 
 ## 🤝 Contributing
 
@@ -109,5 +109,4 @@ Preprocess dataset sequences for downstream modeling:
 PYTHONPATH=src python3 -m choreoai.cli preprocess-dataset --root data/dataset --output-root data/processed
 ```
 
-*Developed for HumanAI — Imagine expansiveness, not conformity.*ns `(T,K,3)` and is stored as `float32`.
->>>>>>> secondary/main
+*Developed for HumanAI — Imagine expansiveness, not conformity.*
