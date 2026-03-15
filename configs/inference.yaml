@@ -1,0 +1,24 @@
+# configs/inference.yaml
+# Configuration for text-to-motion inference
+
+text: "a dancer performs a slow waltz"
+
+text_encoder_ckpt: null   # path to contrastive checkpoint
+generator_ckpt: null       # path to generator checkpoint
+
+model:
+  num_joints: 17
+  seq_len: 120
+  latent_dim: 256
+  d_model: 256
+  nhead: 8
+  num_layers: 8
+  num_timesteps: 1000
+  text_model: roberta-base
+
+output:
+  mp4: outputs/generated.mp4
+  json: null
+  fps: 30
+
+device: null   # auto-detect (cuda/cpu)
