@@ -88,6 +88,8 @@ def preprocess_dataset(
         seq_dir = output_root / example.seq_id
         if seq_dir.exists() and not force:
             raise FileExistsError(f"sequence already exists: {seq_dir}")
+        elif seq_dir.exists():
+            shutil.rmtree(seq_dir)
 
         seq_dir.mkdir(parents=True, exist_ok=True)
         arr = load_pose_array(example.poses_path, allow_nonfinite=True)

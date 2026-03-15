@@ -2,7 +2,7 @@
 
 ## Current Status
 Documentation: ✅ Complete
-Repository Structure: ✅ Cleaned (docs/ duplicate removed)
+Repository Structure: ✅ Cleaned (duplicate `doc/` removed; `docs/` is canonical)
 Core Model Code: ❌ Missing entirely
 Scaffold: ✅ Build metadata + dataset bootstrap/summary/validation CLI added
 Preprocessing: ✅ Interpolation, smoothing, and normalization pipeline added
