@@ -55,7 +55,7 @@ def train_one_epoch(
         model: Conditional denoising transformer.
         scheduler: DDPM noise scheduler.
         encoder: Frozen conditioning encoder (motion or text encoder).
-        optimizer: Optimiser.
+        optimizer: Optimizer.
         dataloader: Training data loader.
         device: Compute device.
         epoch: Current epoch index.
@@ -138,7 +138,7 @@ def save_checkpoint(
 
     Args:
         model: Denoising transformer.
-        optimizer: Optimiser.
+        optimizer: Optimizer.
         epoch: Current epoch.
         ckpt_dir: Destination directory.
     """

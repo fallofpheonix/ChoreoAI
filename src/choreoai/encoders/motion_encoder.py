@@ -129,7 +129,7 @@ class MotionEncoder(nn.Module):
         self._init_weights()
 
     def _init_weights(self) -> None:
-        """Initialise projection weights with Xavier uniform."""
+        """Initialize projection weights with Xavier uniform."""
         nn.init.xavier_uniform_(self.input_proj.weight)
         nn.init.zeros_(self.input_proj.bias)
         nn.init.xavier_uniform_(self.out_proj.weight)

@@ -92,7 +92,7 @@ def train_one_epoch(
     Args:
         encoders: Dict of encoder modules.
         loss_fn: Multi-modal alignment loss.
-        optimizer: Optimiser instance.
+        optimizer: Optimizer instance.
         dataloader: Training data loader.
         device: Compute device.
         epoch: Current epoch number (for logging).
@@ -180,7 +180,7 @@ def save_checkpoint(
 
     Args:
         encoders: Dict of encoder modules.
-        optimizer: Optimiser.
+        optimizer: Optimizer.
         epoch: Current epoch.
         ckpt_dir: Directory to write checkpoints.
     """
