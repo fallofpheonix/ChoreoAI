@@ -1,0 +1,38 @@
+# configs/train_generator.yaml
+# Hydra configuration for diffusion generator training
+
+defaults:
+  - _self_
+
+data:
+  manifest: data/manifest.json
+  max_seq_len: 120
+
+model:
+  num_joints: 17
+  d_model: 256
+  nhead: 8
+  num_layers: 4      # motion encoder layers
+  gen_layers: 8      # denoising transformer layers
+  latent_dim: 256
+
+diffusion:
+  num_timesteps: 1000
+  beta_start: 1.0e-4
+  beta_end: 0.02
+  schedule: cosine
+
+training:
+  epochs: 200
+  batch_size: 32
+  lr: 1.0e-4
+  weight_decay: 1.0e-2
+  num_workers: 4
+  save_every: 10
+  checkpoint_dir: checkpoints/generator
+  contrastive_ckpt: null   # set to path of contrastive checkpoint
+
+wandb:
+  enabled: false
+  project: choreoai
+  run_name: generator
