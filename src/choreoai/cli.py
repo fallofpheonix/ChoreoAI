@@ -12,10 +12,6 @@ Entry points:
   choreoai stage        — copy a raw poses.npy into dataset layout
   choreoai bootstrap    — stage every .npy file from a raw directory
   choreoai preprocess   — repair, smooth, and normalize pose sequences
-  choreoai generate  — generate motion from a text prompt
-  choreoai extract   — extract poses from a video file
-  choreoai evaluate  — compute evaluation metrics
-  choreoai scan      — scan a data directory and build a manifest
 """
 
 from __future__ import annotations
@@ -318,10 +314,6 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    return parser
-
-
-def main() -> None:
     """ChoreoAI CLI entry point."""
     parser = _build_parser()
     args = parser.parse_args()
@@ -332,7 +324,6 @@ def main() -> None:
     )
 
     dispatch_void = {
-    dispatch = {
         "generate": _cmd_generate,
         "extract": _cmd_extract,
         "evaluate": _cmd_evaluate,
@@ -362,14 +353,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
-    handler = dispatch.get(args.command)
-    if handler is None:
-        parser.print_help()
-        sys.exit(1)
-
-    handler(args)
-
-
-if __name__ == "__main__":
-    main()
+    sys.exit(main())

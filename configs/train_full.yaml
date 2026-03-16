@@ -1,0 +1,40 @@
+# configs/train_full.yaml
+defaults:
+  - _self_
+
+data:
+  manifest: data/manifest.json
+  max_seq_len: 120
+
+model:
+  num_joints: 17
+  d_model: 512
+  nhead: 8
+  gen_layers: 12
+  latent_dim: 256
+
+diffusion:
+  num_timesteps: 1000
+  beta_start: 1.0e-4
+  beta_end: 0.02
+  schedule: cosine
+
+training:
+  epochs: 500
+  batch_size: 64
+  lr: 2.0e-4
+  weight_decay: 1.0e-2
+  num_workers: 8
+  save_every: 10
+  eval_every: 5
+  checkpoint_dir: checkpoints/full_model
+  contrastive_ckpt: null
+  gradient_accumulation_steps: 1
+  mixed_precision: true
+  gradient_checkpointing: true
+  early_stopping_patience: 20
+
+wandb:
+  enabled: false
+  project: choreoai
+  run_name: full_training

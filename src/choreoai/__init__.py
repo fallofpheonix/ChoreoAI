@@ -12,4 +12,15 @@ try:
 except PackageNotFoundError:  # pragma: no cover
     __version__ = "0.1.0-dev"
 
-__all__: list[str] = []
+# Public API
+from choreoai.inference import generate_motion
+from choreoai.encoders.motion_encoder import MotionEncoder
+from choreoai.encoders.text_encoder import TextEncoder
+from choreoai.generator.denoising_transformer import DenoisingTransformer
+
+__all__ = [
+    "generate_motion",
+    "MotionEncoder",
+    "TextEncoder",
+    "DenoisingTransformer",
+]

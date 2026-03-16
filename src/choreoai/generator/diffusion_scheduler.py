@@ -212,6 +212,8 @@ class DDPMScheduler(nn.Module):
         conditioning: Tensor,
         device: torch.device | str = "cpu",
         key_padding_mask: Tensor | None = None,
+        guidance_scale: float = 1.0,
+        uncond_conditioning: Tensor | None = None,
     ) -> Tensor:
         """Run the full DDPM reverse diffusion sampling loop.
 
@@ -222,6 +224,8 @@ class DDPMScheduler(nn.Module):
             conditioning: ``(B, latent_dim)`` conditioning embedding.
             device: Target device.
             key_padding_mask: Optional padding mask ``(B, T)``.
+            guidance_scale: Classifier-free guidance multiplier (scale > 1.0 applies CFG).
+            uncond_conditioning: Optional unconditioned embedding for CFG.
 
         Returns:
             Generated sample of the given *shape*.
@@ -230,7 +234,25 @@ class DDPMScheduler(nn.Module):
 
         for i in reversed(range(self.num_timesteps)):
             t = torch.full((shape[0],), i, dtype=torch.long, device=device)
-            noise_pred = model(x, t, conditioning, key_padding_mask)
+            
+            if guidance_scale > 1.0 and uncond_conditioning is not None:
+                # Double the batch for CFG: [uncond, cond]
+                x_in = torch.cat([x, x], dim=0)
+                t_in = torch.cat([t, t], dim=0)
+                cond_in = torch.cat([uncond_conditioning, conditioning], dim=0)
+                
+                kpm_in = None
+                if key_padding_mask is not None:
+                    kpm_in = torch.cat([key_padding_mask, key_padding_mask], dim=0)
+                    
+                noise_pred_both = model(x_in, t_in, cond_in, kpm_in)
+                noise_pred_uncond, noise_pred_cond = noise_pred_both.chunk(2)
+                
+                # Apply Classifier-Free Guidance extrapolation
+                noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_cond - noise_pred_uncond)
+            else:
+                noise_pred = model(x, t, conditioning, key_padding_mask)
+                
             add_noise = i > 0
             x = self.reverse_step(noise_pred, t, x, add_noise=add_noise)
 

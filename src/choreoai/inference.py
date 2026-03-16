@@ -146,6 +146,7 @@ def generate_motion(
     num_layers: int = 8,
     num_timesteps: int = 1000,
     text_model: str = "roberta-base",
+    guidance_scale: float = 1.0,
     device: str | torch.device | None = None,
 ) -> Tensor:
     """Generate a skeleton motion sequence from a text prompt.
@@ -163,6 +164,7 @@ def generate_motion(
         num_layers: Number of transformer encoder layers in generator.
         num_timesteps: DDPM diffusion timesteps.
         text_model: HuggingFace model name for text encoder.
+        guidance_scale: Classifier-free guidance multiplier (e.g. 2.0-5.0).
         device: Target device (defaults to CUDA if available).
 
     Returns:
@@ -187,6 +189,9 @@ def generate_motion(
 
     with torch.no_grad():
         z = text_encoder.encode_texts(texts, device=_device)  # (B, latent_dim)
+        uncond_z = None
+        if guidance_scale > 1.0:
+            uncond_z = text_encoder.encode_texts([""] * len(texts), device=_device)
 
     # -- Generator --
     generator = _load_generator(
@@ -196,7 +201,7 @@ def generate_motion(
         d_model=d_model,
         nhead=nhead,
         num_layers=num_layers,
-        max_seq_len=seq_len,
+        max_seq_len=seq_len + 10,
         num_timesteps=num_timesteps,
         device=_device,
     )
@@ -219,6 +224,8 @@ def generate_motion(
         shape=shape,
         conditioning=z,
         device=_device,
+        guidance_scale=guidance_scale,
+        uncond_conditioning=uncond_z,
     )  # (B, T, K, 3)
 
     if not batch_input:

@@ -35,24 +35,37 @@ def interpolate_missing(arr: np.ndarray) -> np.ndarray:
         Array with missing values interpolated.
     """
     out = np.array(arr, dtype=np.float64, copy=True)
-    frames, joints, dims = out.shape
-
-    for joint_idx in range(joints):
-        for dim_idx in range(dims):
-            values = out[:, joint_idx, dim_idx]
-            valid = np.isfinite(values)
-
+    mask = np.isfinite(out)
+    
+    if mask.all():
+        return out
+    if not mask.any():
+        return np.zeros_like(out)
+        
+    try:
+        import pandas as pd
+        frames = out.shape[0]
+        flattened = out.reshape(frames, -1)
+        df = pd.DataFrame(flattened)
+        df.interpolate(method='linear', axis=0, limit_direction='both', inplace=True)
+        df.fillna(0.0, inplace=True)
+        return df.values.reshape(out.shape)
+    except ImportError:
+        frames = out.shape[0]
+        out_flat = out.reshape(frames, -1)
+        for i in range(out_flat.shape[1]):
+            col = out_flat[:, i]
+            valid = np.isfinite(col)
             if valid.all():
                 continue
             if not valid.any():
-                values[:] = 0.0
+                col[:] = 0.0
                 continue
-
             valid_idx = np.flatnonzero(valid)
             missing_idx = np.flatnonzero(~valid)
-            values[missing_idx] = np.interp(missing_idx, valid_idx, values[valid_idx])
-
-    return out
+            col[missing_idx] = np.interp(missing_idx, valid_idx, col[valid_idx])
+            
+        return out_flat.reshape(out.shape)
 
 
 def smooth_pose_sequence(arr: np.ndarray, window: int) -> np.ndarray:
@@ -73,14 +86,28 @@ def smooth_pose_sequence(arr: np.ndarray, window: int) -> np.ndarray:
     if window % 2 == 0:
         raise ValueError(f"smooth_window must be odd, got {window}")
 
-    pad = window // 2
-    padded = np.pad(arr, ((pad, pad), (0, 0), (0, 0)), mode="edge")
-    out = np.empty_like(arr, dtype=np.float64)
-
-    for idx in range(arr.shape[0]):
-        out[idx] = padded[idx : idx + window].mean(axis=0)
-
-    return out
+    # Use a uniform kernel for moving average
+    kernel = np.ones(window) / window
+    
+    # We want to smooth along the temporal axis (0) for each joint and dimension.
+    # We can reshape the array to (T, K*3) and apply 1D convolution to each column.
+    T, K, D = arr.shape
+    flattened = arr.reshape(T, -1)
+    
+    # Padding corresponds to 'edge' mode in the original loop
+    # We can manually pad and use 'valid' convolution mode or use scipy.ndimage.uniform_filter1d
+    try:
+        from scipy.ndimage import uniform_filter1d
+        smoothed_flat = uniform_filter1d(flattened, size=window, axis=0, mode='nearest')
+    except ImportError:
+        # Fallback to numpy convolution if scipy is missing
+        pad = window // 2
+        padded = np.pad(flattened, ((pad, pad), (0, 0)), mode="edge")
+        smoothed_flat = np.zeros_like(flattened)
+        for i in range(flattened.shape[1]):
+            smoothed_flat[:, i] = np.convolve(padded[:, i], kernel, mode='valid')
+            
+    return smoothed_flat.reshape(T, K, D)
 
 
 def normalize_pose_sequence(
@@ -165,7 +192,7 @@ def preprocess_dataset(
 
         for maybe_path in (example.text_path, example.image_path, example.audio_path):
             if maybe_path is not None:
-                shutil.copy2(maybe_path, seq_dir / maybe_path.name)
+                shutil.copy(maybe_path, seq_dir / maybe_path.name)
 
         created.append(seq_dir)
 

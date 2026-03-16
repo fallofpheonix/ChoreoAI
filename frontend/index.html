@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChoreoAI Visualizer</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="container">
+        <div id="ui-overlay">
+            <h1>ChoreoAI Real-Time Visualizer</h1>
+            <div class="input-group">
+                <input type="text" id="prompt-input" placeholder="Enter motion prompt (e.g., 'a dancer performs a slow waltz')">
+                <button id="generate-btn">Generate</button>
+            </div>
+            <div class="controls">
+                <button id="play-btn">Play</button>
+                <button id="pause-btn">Pause</button>
+                <input type="range" id="timeline" min="0" max="100" value="0">
+                <span id="frame-counter">Frame: 0/0</span>
+            </div>
+            <div id="status">Ready</div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

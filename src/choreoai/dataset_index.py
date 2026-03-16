@@ -243,6 +243,12 @@ def bootstrap_dataset_from_raw(
         elif seq_dir.exists():
             shutil.rmtree(seq_dir)
         seq_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, seq_dir / "poses.npy")
-        created.append(seq_dir)
+        try:
+            shutil.copy(source, seq_dir / "poses.npy")
+            created.append(seq_dir)
+        except PermissionError:
+            print(f"warning: skipped {source} due to permission error")
+            if seq_dir.exists():
+                shutil.rmtree(seq_dir)
+            continue
     return created
