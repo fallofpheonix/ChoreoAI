@@ -28,6 +28,11 @@ ENV/
 *.swo
 .DS_Store
 
+# Local environment files
+.env
+.env.*
+!.env.example
+
 # Testing & coverage
 .pytest_cache/
 .coverage

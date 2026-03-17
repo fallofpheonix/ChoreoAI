@@ -1,112 +1,56 @@
-# ChoreoAI 🩰✨
-### AI-Enabled Choreography — Dance Beyond Music
+# ChoreoAI
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![GSoC 2026](https://img.shields.io/badge/GSoC-2026-orange.svg)](https://summerofcode.withgoogle.com/)
+ChoreoAI is a multimodal-to-motion pipeline for generating 3D dance pose sequences from text prompts.
+It includes model inference, dataset lifecycle tooling, and a lightweight HTTP API.
 
----
+## Project layout
 
-## 📖 Project Overview
-
-**ChoreoAI** is an experimental open-source framework designed to expand the digital perception of dance. While traditional AI choreography focuses on motion-to-motion prediction, ChoreoAI treats dance as a **multimodal dialogue**. By aligning 3D motion with text, imagery, architecture, and spoken word, we empower artists to explore AI as a generative partner in the choreographic process.
-
-Developed as part of the **HumanAI** initiative, this project prioritizes artist-led design and expressive expansiveness over reductive movement prediction.
-
-## 🚀 Key Features
-
-- 🎥 **Robust Motion Extraction**: Pipeline for converting mono-video into normalized 3D skeletal point-cloud sequences.
-- 🧠 **Multimodal Alignment**: Contrastive learning backbone (inspired by CLIP) for shared latent embeddings of dance and auxiliary modalities.
-- 🌪️ **Generative Synthesis**: Conditional Motion Diffusion Model (MDM) for high-fidelity 3D choreography generation from arbitrary prompts.
-- 📊 **Metric Suite**: Integrated evaluation tools including Frechet Motion Distance (FID) and semantic retrieval accuracy.
-- 🎨 **Artist-in-the-Loop**: Schema-driven "prompting" system designed for intuitive choreographic input.
-
-## 🏗️ Project Architecture
-
-```mermaid
-graph TD
-    A[Dance Video / Paired Modalities] --> B[Pose Extraction & Validation]
-    B --> C[Preprocessing & Normalization]
-    C --> D[Multimodal Dataset Schema]
-    D --> E[Motion Encoder]
-    D --> F[Auxiliary Encoders: Text/Image/Audio]
-    E --> G[Shared Latent Space]
-    F --> G
-    G --> H[Conditional Motion Generator]
-    H --> I[Choreographic Output & Visualization]
+```text
+src/choreoai/
+  api/        # HTTP transport layer (FastAPI app and schemas)
+  config/     # environment-backed application settings
+  core/       # domain entities and validation rules
+  services/   # orchestration layer used by CLI/API
+  encoders/   # representation learning models
+  generator/  # diffusion model components
+  utils/      # shared cross-cutting helpers
 ```
 
-## 🛠️ Installation
+## Quick start
 
 ```bash
-# Clone the repository
-git clone https://github.com/fallofpheonix/choreo_ai.git
-cd choreo_ai
-
-# Set up environment
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-
-# Install ChoreoAI in editable mode
 pip install -e .
 ```
 
-## 📂 Repository Structure
+Run CLI:
 
-- `src/choreoai/`: Core library (Extraction, Alignment, Generation).
-- `data/`: Sample datasets and modality pairs.
-- `docs/`: Comprehensive project documentation and GSoC proposal logic.
-- `configs/`: Model hyperparameters and training configurations.
-- `notebooks/`: Exploratory analysis and artist-led visualization demos.
-- `tests/`: Unit and integration tests.
-
-## 🤝 Contributing
-
-We welcome contributions from developers, researchers, and artists! Please see our [Contribution Guidelines](CONTRIBUTING.md) for more information.
-
-## 📬 Contact & Application
-
-ChoreoAI is a **Google Summer of Code (GSoC) 2026** project. 
-
-Please **DO NOT** contact mentors directly by email. Instead, please email [human.ai.choreo@gmail.com](mailto:human.ai.choreo@gmail.com) with subject line **“Test Submission: AI Choreo”** and include your CV and GitHub repository link.
-
----
-
-### Mentors
-- **Mariel Pettee** (Lawrence Berkeley National Laboratory)
-- **Ilya Vidrin** (Northeastern University)
-
----
-
-### Project Legacy & Technical Details (from ChoreoAI)
-
-#### Expected Results
-1. Create a dataset of dynamic point-cloud data corresponding to extracted motion capture poses from videos of dances.
-2. Craft a (semi-)supervised paradigm for constructing paired modalities (language, audio, art, etc.).
-3. Design a multimodal embedding scheme.
-4. Train an any-to-any generative model.
-5. Work closely with dance artists for artist-led design.
-
-#### CLI Workflow
-Bootstrap a dataset from raw pose arrays:
 ```bash
-PYTHONPATH=src python3 -m choreoai.cli bootstrap-dataset --raw-root data/raw --root data/dataset
+choreoai --help
+choreoai summarize --root data/dataset
 ```
 
-Validate dataset structure and pose tensor shape:
+Run API:
+
 ```bash
-PYTHONPATH=src python3 -m choreoai.cli validate-dataset --root data/dataset
+uvicorn choreoai.api:app --reload
 ```
 
-Summarize sequence-level dataset statistics:
+Run tests:
+
 ```bash
-PYTHONPATH=src python3 -m choreoai.cli summarize-dataset --root data/dataset
+pytest
 ```
 
-Preprocess dataset sequences for downstream modeling:
-```bash
-PYTHONPATH=src python3 -m choreoai.cli preprocess-dataset --root data/dataset --output-root data/processed
-```
+## Key decisions
 
-*Developed for HumanAI — Imagine expansiveness, not conformity.*
+- Keep model code mostly unchanged and refactor around it via services.
+- Preserve existing command behavior while reducing adapter-level duplication.
+- Add practical validation and telemetry hooks without over-abstracting.
+
+## Notes
+
+- `.env.example` documents supported runtime environment variables.
+- Dataset preprocessing still favors readability over maximum throughput.
