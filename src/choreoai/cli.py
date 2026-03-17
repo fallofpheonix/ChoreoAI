@@ -22,7 +22,10 @@ import logging
 import sys
 from pathlib import Path
 
+from choreoai.services.dataset_service import DatasetService
+
 logger = logging.getLogger("choreoai")
+dataset_service = DatasetService()
 
 
 # ---------------------------------------------------------------------------
@@ -89,10 +92,8 @@ def _cmd_extract(args: argparse.Namespace) -> None:
 
 def _cmd_evaluate(args: argparse.Namespace) -> None:
     """Compute FMD and/or retrieval metrics for generated motion."""
+    import torch
     import numpy as np
-    import torch
-
-    import torch
     from choreoai.encoders.motion_encoder import MotionEncoder
     from choreoai.evaluate import compute_fmd, extract_motion_features
 
@@ -103,12 +104,6 @@ def _cmd_evaluate(args: argparse.Namespace) -> None:
     def _load(path: str) -> torch.Tensor:
         arr = np.load(path)
         return torch.from_numpy(arr)
-    import numpy as np
-
-    def _load(path: str):  # type: ignore[return]
-        arr = np.load(path)
-        import torch as _torch
-        return _torch.from_numpy(arr)
 
     real_poses = [_load(p) for p in Path(args.real_dir).glob("**/*.npy")]
     gen_poses = [_load(p) for p in Path(args.gen_dir).glob("**/*.npy")]
@@ -144,10 +139,8 @@ def _cmd_scan(args: argparse.Namespace) -> None:
 
 def _cmd_validate_dataset(args: argparse.Namespace) -> int:
     """Validate dataset layout and poses.npy files."""
-    from choreoai.dataset_index import validate_dataset
-
     root = Path(args.root)
-    errors = validate_dataset(root)
+    errors = dataset_service.validate(root)
     if errors:
         for err in errors:
             print(err, file=sys.stderr)
@@ -158,10 +151,8 @@ def _cmd_validate_dataset(args: argparse.Namespace) -> int:
 
 def _cmd_summarize_dataset(args: argparse.Namespace) -> int:
     """Print sequence-level dataset statistics."""
-    from choreoai.dataset_index import summarize_dataset
-
     root = Path(args.root)
-    summaries = summarize_dataset(root)
+    summaries = dataset_service.summarize(root)
     if not summaries:
         print("sequences=0")
         return 0
@@ -178,9 +169,7 @@ def _cmd_summarize_dataset(args: argparse.Namespace) -> int:
 
 def _cmd_stage_sequence(args: argparse.Namespace) -> int:
     """Copy a raw poses.npy into dataset layout."""
-    from choreoai.dataset_index import stage_pose_sequence
-
-    seq_dir = stage_pose_sequence(
+    seq_dir = dataset_service.stage(
         source_path=Path(args.source),
         dataset_root=Path(args.root),
         seq_id=args.seq_id,
@@ -193,9 +182,7 @@ def _cmd_stage_sequence(args: argparse.Namespace) -> int:
 
 def _cmd_bootstrap_dataset(args: argparse.Namespace) -> int:
     """Stage every .npy file from a raw directory."""
-    from choreoai.dataset_index import bootstrap_dataset_from_raw
-
-    created = bootstrap_dataset_from_raw(
+    created = dataset_service.bootstrap(
         raw_root=Path(args.raw_root),
         dataset_root=Path(args.root),
         force=args.force,
@@ -208,16 +195,11 @@ def _cmd_bootstrap_dataset(args: argparse.Namespace) -> int:
 
 def _cmd_preprocess_dataset(args: argparse.Namespace) -> int:
     """Repair, smooth, and normalize pose sequences."""
-    from choreoai.preprocess_np import PreprocessConfig, preprocess_dataset
-
-    config = PreprocessConfig(
-        smooth_window=args.smooth_window,
-        center_joint=args.center_joint,
-    )
-    created = preprocess_dataset(
+    created = dataset_service.preprocess(
         input_root=Path(args.root),
         output_root=Path(args.output_root),
-        config=config,
+        smooth_window=args.smooth_window,
+        center_joint=args.center_joint,
         force=args.force,
     )
     print(f"processed={len(created)}")
