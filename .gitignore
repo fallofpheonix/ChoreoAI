@@ -63,3 +63,40 @@ logs/
 
 # Compiled Cython
 *.c
+# OS/editor
+.ruff_cache/
+.mypy_cache/
+# Node/JS
+node_modules/
+coverage/
+# Dart/Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+# Local data, models, and generated artifacts
+*.db
+*.db.bak
+*.sqlite
+*.sqlite3
+*.jsonl
+*.csv.tmp
+out/
+out_old/
+output/
+artifacts/runs/
+artifacts/checkpoints/
+models/**/*.pt
+models/**/*.pth
+models/**/*.bin
+*.onnx
+*.mp3
+*.wav
+*.m4a
+# Native build products
+*.o
+*.a
+*.dylib
+*.exe
+bench/bench_*
+tests/test_*
